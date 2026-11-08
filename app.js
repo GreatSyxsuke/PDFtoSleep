@@ -15,13 +15,13 @@ const DEVICE_PROFILES = [
   {
     id: "xteink-x4",
     name: "XTEink X4 Classic",
-    width: 400,   // set to the X4 Classic's real resolution once confirmed
+    width: 480,   // set to the X4 Classic's real resolution once confirmed
     height: 800
   },
   {
     id: "xteink-x4-pro",
     name: "XTEink X4 Pro",
-    width: 400,
+    width: 480,
     height: 800
   }
 ];
