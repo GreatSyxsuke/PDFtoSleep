@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>E‑Ink Sleep Screen Maker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="top-bar">
+      <div class="file-section">
+        <label class="file-label">
+          <span>PDF file:</span>
+          <input id="pdf-input" type="file" accept="application/pdf" />
+        </label>
+        <span id="file-name" class="file-name"></span>
+      </div>
+
+      <div class="device-section">
+        <label>
+          <span>Device:</span>
+          <select id="device-select"></select>
+        </label>
+
+        <label>
+          <span>Fit mode:</span>
+          <select id="fit-select">
+            <option value="fit">Fit (no crop)</option>
+            <option value="fill">Fill (may crop)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="export-section">
+        <button id="export-button" disabled>Export selected pages</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <div id="placeholder" class="placeholder">
+        <p>Upload a PDF to begin.</p>
+      </div>
+      <div id="thumbnails" class="thumbnails-grid hidden"></div>
+    </main>
+  </div>
+
+  <!-- pdf.js (library + worker) from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"></script>
+  <script>
+    // Point pdf.js at the worker script on the same CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js";
+  </script>
+
+  <!-- JSZip from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Your app logic -->
+  <script src="app.js"></script>
+</body>
+</html>
