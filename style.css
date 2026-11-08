@@ -1,0 +1,169 @@
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f6f6f6;
+  color: #222;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  align-items: center;
+}
+
+.file-section,
+.device-section,
+.export-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.file-section {
+  flex: 1 1 auto;
+}
+
+.device-section {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.export-section {
+  margin-left: auto;
+}
+
+.file-label span {
+  margin-right: 0.5rem;
+}
+
+input[type="file"] {
+  max-width: 200px;
+}
+
+select {
+  padding: 0.2rem 0.4rem;
+}
+
+button {
+  padding: 0.45rem 0.9rem;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+button:disabled {
+  background: #ccc;
+  border-color: #aaa;
+  cursor: default;
+}
+
+.file-name {
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.content {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 0.75rem 1rem 1.5rem;
+}
+
+.placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+}
+
+.thumbnails-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.thumb-card {
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+}
+
+.thumb-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.thumb-card.selected {
+  border-color: #0077ff;
+  box-shadow: 0 0 0 2px rgba(0, 119, 255, 0.4);
+}
+
+.thumb-image {
+  background: #f0f0f0;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb-image img {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.thumb-placeholder {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.thumb-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.selected-badge {
+  color: #0077ff;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Mobile tweaks */
+@media (max-width: 700px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .export-section {
+    margin-left: 0;
+  }
+
+  .thumbnails-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  }
+}
