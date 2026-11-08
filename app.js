@@ -9,22 +9,23 @@ const DEVICE_PROFILES = [
   {
     id: "xteink-x3",
     name: "XTEink X3",
-    width: 600,  // adjust to actual resolution
-    height: 800
+    width: 528,
+    height: 792
   },
   {
     id: "xteink-x4",
-    name: "XTEink X4",
-    width: 600,  // adjust to actual resolution
+    name: "XTEink X4 Classic",
+    width: 400,   // set to the X4 Classic's real resolution once confirmed
     height: 800
   },
   {
     id: "xteink-x4-pro",
     name: "XTEink X4 Pro",
-    width: 600,  // adjust to actual resolution
+    width: 400,
     height: 800
   }
 ];
+
 
 // UI elements
 const pdfInput = document.getElementById("pdf-input");
