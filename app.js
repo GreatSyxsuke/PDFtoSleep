@@ -173,8 +173,8 @@ function autoTrimMargins(sourceCanvas, tolerance = 240) {
 async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
   const page = await pdf.getPage(pageNumber);
 
-  // Step 1: render the page to an intermediate canvas at good resolution
-  const baseScale = 2.0; // render at 2x for nicer downscaling
+  // Step 1: render to intermediate canvas
+  const baseScale = 2.0;
   const viewport = page.getViewport({ scale: baseScale });
 
   const srcCanvas = document.createElement("canvas");
@@ -187,7 +187,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
     viewport
   }).promise;
 
-  // Step 2: optionally trim margins before fitting
+  // Step 2: optionally trim margins (kept as-is; stretch will still use full contentCanvas)
   let contentCanvas = srcCanvas;
   if (fitMode === "fit-trim") {
     contentCanvas = autoTrimMargins(srcCanvas, 240);
@@ -201,11 +201,15 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
   const targetHeight = device.height;
   const targetAspect = targetWidth / targetHeight;
 
-  // Step 3: compute scale based on mode
   let drawWidth = targetWidth;
   let drawHeight = targetHeight;
 
-  if (fitMode === "fit" || fitMode === "fit-trim") {
+  if (fitMode === "stretch") {
+    // Ignore aspect ratio; fill entire screen
+    drawWidth = targetWidth;
+    drawHeight = targetHeight;
+  } else if (fitMode === "fit" || fitMode === "fit-trim") {
+    // Keep full content, no crop, preserve aspect ratio
     if (contentAspect > targetAspect) {
       drawWidth = targetWidth;
       drawHeight = Math.round(targetWidth / contentAspect);
@@ -214,6 +218,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
       drawWidth = Math.round(targetHeight * contentAspect);
     }
   } else if (fitMode === "fill") {
+    // Fill screen, may crop
     if (contentAspect > targetAspect) {
       drawHeight = targetHeight;
       drawWidth = Math.round(targetHeight * contentAspect);
@@ -223,7 +228,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
     }
   }
 
-  // Step 4: draw into device-sized canvas
+  // Step 3: draw onto device-sized canvas
   const canvas = document.createElement("canvas");
   canvas.width = targetWidth;
   canvas.height = targetHeight;
@@ -232,6 +237,8 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, targetWidth, targetHeight);
 
+  // For non-stretch modes, you might still want centering or top-aligning;
+  // for stretch, we just fill everything.
   const offsetX = Math.round((targetWidth - drawWidth) / 2);
   const offsetY = Math.round((targetHeight - drawHeight) / 2);
 
@@ -247,7 +254,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
     drawHeight
   );
 
-  // Step 5: grayscale + contrast as before
+  // Step 4: grayscale + slight contrast boost
   const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
@@ -267,6 +274,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
 
   return canvas;
 }
+
 
 
 // UI helpers
