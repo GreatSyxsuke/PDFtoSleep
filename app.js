@@ -59,11 +59,20 @@ function getCurrentDevice() {
 
 // PDF loading
 async function loadPdfFromFile(file) {
-  const arrayBuffer = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
-  const pdf = await loadingTask.promise;
-  return pdf;
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuffer);
+
+    const loadingTask = pdfjsLib.getDocument({ data: uint8 });
+    const pdf = await loadingTask.promise;
+
+    return pdf;
+  } catch (err) {
+    console.error("Error inside loadPdfFromFile:", err);
+    throw err;
+  }
 }
+
 
 // Thumbnail rendering
 async function renderThumbnail(pdf, pageNumber, thumbWidth = 200) {
