@@ -97,40 +97,133 @@ async function renderThumbnail(pdf, pageNumber, thumbWidth = 200) {
   return canvas.toDataURL("image/png");
 }
 
+
+function autoTrimMargins(sourceCanvas, tolerance = 240) {
+  const w = sourceCanvas.width;
+  const h = sourceCanvas.height;
+  const ctx = sourceCanvas.getContext("2d");
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+
+  let top = 0;
+  let bottom = h - 1;
+  let left = 0;
+  let right = w - 1;
+
+  function rowIsBlank(y) {
+    const rowStart = y * w * 4;
+    for (let x = 0; x < w; x++) {
+      const i = rowStart + x * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r < tolerance || g < tolerance || b < tolerance) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function colIsBlank(x) {
+    for (let y = 0; y < h; y++) {
+      const i = (y * w + x) * 4;
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r < tolerance || g < tolerance || b < tolerance) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  while (top < h && rowIsBlank(top)) top++;
+  while (bottom >= top && rowIsBlank(bottom)) bottom--;
+  while (left < w && colIsBlank(left)) left++;
+  while (right >= left && colIsBlank(right)) right--;
+
+  const trimmedWidth = right - left + 1;
+  const trimmedHeight = bottom - top + 1;
+
+  // If trimming would remove everything, just return the original
+  if (trimmedWidth <= 0 || trimmedHeight <= 0) {
+    return sourceCanvas;
+  }
+
+  const out = document.createElement("canvas");
+  out.width = trimmedWidth;
+  out.height = trimmedHeight;
+  const outCtx = out.getContext("2d");
+  outCtx.drawImage(
+    sourceCanvas,
+    left,
+    top,
+    trimmedWidth,
+    trimmedHeight,
+    0,
+    0,
+    trimmedWidth,
+    trimmedHeight
+  );
+
+  return out;
+}
+
 // Full-resolution rendering with grayscale + contrast
 async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
   const page = await pdf.getPage(pageNumber);
+
+  // Step 1: render the page to an intermediate canvas at good resolution
+  const baseScale = 2.0; // render at 2x for nicer downscaling
+  const viewport = page.getViewport({ scale: baseScale });
+
+  const srcCanvas = document.createElement("canvas");
+  srcCanvas.width = viewport.width;
+  srcCanvas.height = viewport.height;
+  const srcCtx = srcCanvas.getContext("2d");
+
+  await page.render({
+    canvasContext: srcCtx,
+    viewport
+  }).promise;
+
+  // Step 2: optionally trim margins before fitting
+  let contentCanvas = srcCanvas;
+  if (fitMode === "fit-trim") {
+    contentCanvas = autoTrimMargins(srcCanvas, 240);
+  }
+
+  const contentWidth = contentCanvas.width;
+  const contentHeight = contentCanvas.height;
+  const contentAspect = contentWidth / contentHeight;
+
   const targetWidth = device.width;
   const targetHeight = device.height;
-
-  const viewport = page.getViewport({ scale: 1.0 });
-  const pageAspect = viewport.width / viewport.height;
   const targetAspect = targetWidth / targetHeight;
 
-  let renderWidth = targetWidth;
-  let renderHeight = targetHeight;
+  // Step 3: compute scale based on mode
+  let drawWidth = targetWidth;
+  let drawHeight = targetHeight;
 
-  if (fitMode === "fit") {
-    if (pageAspect > targetAspect) {
-      renderWidth = targetWidth;
-      renderHeight = Math.round(targetWidth / pageAspect);
+  if (fitMode === "fit" || fitMode === "fit-trim") {
+    if (contentAspect > targetAspect) {
+      drawWidth = targetWidth;
+      drawHeight = Math.round(targetWidth / contentAspect);
     } else {
-      renderHeight = targetHeight;
-      renderWidth = Math.round(targetHeight * pageAspect);
+      drawHeight = targetHeight;
+      drawWidth = Math.round(targetHeight * contentAspect);
     }
   } else if (fitMode === "fill") {
-    if (pageAspect > targetAspect) {
-      renderHeight = targetHeight;
-      renderWidth = Math.round(targetHeight * pageAspect);
+    if (contentAspect > targetAspect) {
+      drawHeight = targetHeight;
+      drawWidth = Math.round(targetHeight * contentAspect);
     } else {
-      renderWidth = targetWidth;
-      renderHeight = Math.round(targetWidth / pageAspect);
+      drawWidth = targetWidth;
+      drawHeight = Math.round(targetWidth / contentAspect);
     }
   }
 
-  const scale = renderWidth / viewport.width;
-  const scaledViewport = page.getViewport({ scale });
-
+  // Step 4: draw into device-sized canvas
   const canvas = document.createElement("canvas");
   canvas.width = targetWidth;
   canvas.height = targetHeight;
@@ -139,28 +232,32 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
   ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-  const offsetX = Math.round((targetWidth - renderWidth) / 2);
-  const offsetY = Math.round((targetHeight - renderHeight) / 2);
+  const offsetX = Math.round((targetWidth - drawWidth) / 2);
+  const offsetY = Math.round((targetHeight - drawHeight) / 2);
 
-  await page
-    .render({
-      canvasContext: ctx,
-      viewport: scaledViewport,
-      transform: [1, 0, 0, 1, offsetX, offsetY]
-    })
-    .promise;
+  ctx.drawImage(
+    contentCanvas,
+    0,
+    0,
+    contentWidth,
+    contentHeight,
+    offsetX,
+    offsetY,
+    drawWidth,
+    drawHeight
+  );
 
-  // Grayscale + slight contrast boost
+  // Step 5: grayscale + contrast as before
   const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
   const data = imageData.data;
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-    let lum = 0.3 * r + 0.59 * g + 0.11 * b; // luminance
+    let lum = 0.3 * r + 0.59 * g + 0.11 * b;
 
     lum = lum / 255;
-    const contrast = 1.15; // tweak to taste
+    const contrast = 1.15;
     lum = ((lum - 0.5) * contrast + 0.5) * 255;
     lum = Math.max(0, Math.min(255, lum));
 
@@ -170,6 +267,7 @@ async function renderPageForDevice(pdf, pageNumber, device, fitMode = "fit") {
 
   return canvas;
 }
+
 
 // UI helpers
 function clearThumbnails() {
