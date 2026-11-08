@@ -45,18 +45,17 @@
     </main>
   </div>
 
- <!-- pdf.js (library + worker) from CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.js"></script>
+<!-- pdf.js (library + worker) from CDN, 2.x UMD build -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
 <script>
-  // Make sure pdfjsLib is actually available
   if (!window.pdfjsLib) {
     console.error("pdfjsLib not found on window – pdf.js failed to load.");
   } else {
-    // IMPORTANT: workerSrc must match the same version/path
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.js";
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js";
   }
 </script>
+
 
 
   <!-- JSZip from CDN -->
